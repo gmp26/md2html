@@ -15,7 +15,7 @@ import Data.Traversable
 import Data.Maybe (listToMaybe)
 import System.Directory (doesFileExist, getDirectoryContents)
 import System.FilePath.Glob (globDir1, compile)
-import System.FilePath ((</>))
+import System.FilePath ((</>), replaceExtension)
 import System.Environment
 import System.Console.GetOpt
 import Data.Text (pack, replace, unpack)
@@ -55,10 +55,10 @@ markdownPaths = globDir1 (compile "**/*.md")
 destPaths :: SrcDir -> DstDir -> [FilePath] -> [FilePath]
 destPaths srcDir dstDir srcPaths = fmap src2dst srcPaths
   where
-    src2dst fp = 
-      unpack $ replace srcText dstText (pack fp)
+    src2dst = unpack . (replace srcText dstText) . pack . tohtml 
     srcText = pack srcDir
     dstText = pack dstDir
+    tohtml fp = replaceExtension fp ".html"
 
 
 -- | Walk a directory, selecting files, and processing
