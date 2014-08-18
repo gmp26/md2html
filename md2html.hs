@@ -13,9 +13,9 @@ import  Data.List hiding (
 import Data.Foldable
 import Data.Traversable
 import Data.Maybe (listToMaybe)
-import System.Directory (doesFileExist, getDirectoryContents)
+import System.Directory (doesFileExist, getDirectoryContents, createDirectoryIfMissing)
 import System.FilePath.Glob (globDir1, compile)
-import System.FilePath ((</>), replaceExtension)
+import System.FilePath ((</>), replaceExtension, takeDirectory)
 import System.Environment
 import System.Console.GetOpt
 import Data.Text (pack, replace, unpack)
@@ -64,34 +64,52 @@ dstPath srcDir dstDir = unpack . (replace srcText dstText) . pack . tohtml
     tohtml fp = replaceExtension fp ".html"
 
 -- | Transform a list of source (markdown) paths to a list of dstPath (html) paths
-destPaths :: SrcDir -> DstDir -> [SrcPath] -> [DstPath]
-destPaths srcDir dstDir srcPaths = fmap src2dst srcPaths where
-  src2dst = dstPath srcDir dstDir
+--destPaths :: SrcDir -> DstDir -> [SrcPath] -> [DstPath]
+--destPaths srcDir dstDir srcPaths = fmap src2dst srcPaths where
+--  src2dst = dstPath srcDir dstDir
 
 -- | Augment a list of source (markdown) paths with dstPath (html) paths
-srcdestPairs :: SrcDir -> DstDir -> [SrcPath] -> [(SrcPath, DstPath)]
-srcdestPairs srcDir dstDir srcPaths = fmap addDestTo srcPaths where
-  src2dst = dstPath srcDir dstDir
-  addDestTo sfp = (sfp, src2dst sfp) 
+--srcdestPairs :: SrcDir -> DstDir -> [SrcPath] -> [(SrcPath, DstPath)]
+--srcdestPairs srcDir dstDir srcPaths = fmap addDestTo srcPaths where
+--  src2dst = dstPath srcDir dstDir
+--  addDestTo sfp = (sfp, src2dst sfp) 
 
 -- | Use default pandoc read and write options
 rOptions = def
 wOptions = def
 
--- | Is it possible to stream this ?
+-- | Run pandoc over a markdown string, making an html string
 runPandoc :: String -> String
 runPandoc md =
   writeHtmlString wOptions $ readMarkdown rOptions md
 
+-- | Convert the first in a list of markdown source files to html files
+--processOne :: SrcDir -> DstDir -> [SrcPath] -> IO()
+--processOne srcDir dstDir [] = return ()
+--processOne srcDir dstDir (sfp:sfps) = do
+--  input <- readFile sfp
+--  let dfp = dstPath srcDir dstDir sfp
+--  createDirectoryIfMissing True $ takeDirectory dfp
+--  writeFile dfp $ runPandoc input
+
+-- | Convert a list of markdown source files to html files
+processAll :: SrcDir -> DstDir -> [SrcPath] -> IO()
+processAll srcDir dstDir [] = return ()
+processAll srcDir dstDir (sfp:sfps) = do
+  input <- readFile sfp
+  let dfp = dstPath srcDir dstDir sfp
+  createDirectoryIfMissing True $ takeDirectory dfp
+  writeFile dfp $ runPandoc input
+  processAll srcDir dstDir sfps
+
 
 -- | Walk a directory, selecting files, and processing
-mapDir :: (FilePath -> IO ()) -> FilePath -> IO ()
-mapDir proc fp = do
-  isFile <- doesFileExist fp -- is a file of fp
-  if isFile then proc fp     -- process the file
-  else getDirectoryContents fp >>=
-       mapM_ (mapDir proc . (fp </>)) . filter (`notElem` [".", ".."])
-
+--mapDir :: (FilePath -> IO ()) -> FilePath -> IO ()
+--mapDir proc fp = do
+--  isFile <- doesFileExist fp -- is a file of fp
+--  if isFile then proc fp     -- process the file
+--  else getDirectoryContents fp >>=
+--       mapM_ (mapDir proc . (fp </>)) . filter (`notElem` [".", ".."])
 
 main :: IO()
 main = do
@@ -107,8 +125,13 @@ main = do
   putStrLn $ "dstdir = " ++ dstdir
 
   srcFiles <- markdownPaths srcdir
-  mapM_ putStrLn srcFiles
 
-  let dstFiles = destPaths srcdir dstdir srcFiles
-  mapM_ putStrLn dstFiles
+  if Verbose `elem` userOpts
+    then mapM_ putStrLn srcFiles
+    else return ()
+
+  --let dstFiles = destPaths srcdir dstdir srcFiles
+  --mapM_ putStrLn dstFiles
+
+  processAll srcdir dstdir srcFiles
 
