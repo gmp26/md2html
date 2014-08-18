@@ -22,3 +22,13 @@ cabal install
 
 When this is successful, the executable will be built in `.cabal-sandbox/bin/md2html`. It's too large to distribute here since it embeds pandoc.
 
+Test
+---
+
+```
+cd md2html
+mv html.orig
+.cabal-sandbox/bin/md2html
+```
+
+This will rebuild the `html` folder from the `md` folder.
