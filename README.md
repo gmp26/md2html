@@ -10,7 +10,7 @@ This is all very provisional and needs to be verified!
 
 First you'll need to install the 2014 [Haskell Platform](http://www.haskell.org/platform/). You need at least ghc 7.8 and cabal 1.18.
 
-Then, clone this repo and use cabal to install it in a sandbox. If prompted for other dependencies, install those too using cabal.
+Then, clone this repo and use cabal to install it in a sandbox. If prompted for other dependencies, install those too using `cabal install dependency_name`.
 
 ```
 git clone github.com/gmp26/md2html.git
