@@ -1,7 +1,7 @@
 md2html
 =======
 
-md2html walks a directory of markdown files, running pandoc on each one to create a similar tree of html files. It is hugely more efficient when processing a large number of files. On 4000 files we saw an 8 minute run reduce to a 10 second run.
+md2html walks a directory of markdown files, running pandoc on each one to create a similar tree of html files. It is hugely more efficient than scripting multiple pandoc executions when processing a large number of files. On 4000 files we saw an 8 minute run reduce to a 10 second run.
 
 Installation
 ---
