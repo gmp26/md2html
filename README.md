@@ -27,7 +27,7 @@ Test
 
 ```
 cd md2html
-mv html.orig
+mv html html.orig
 .cabal-sandbox/bin/md2html
 ```
 
