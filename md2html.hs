@@ -19,13 +19,18 @@ import System.FilePath ((</>), replaceExtension)
 import System.Environment
 import System.Console.GetOpt
 import Data.Text (pack, replace, unpack)
-
+import Text.Pandoc
+import Text.Pandoc.Options
+import Text.Pandoc.Readers.Markdown
+import Text.Pandoc.Writers.HTML
 
 data OptionFlag = Verbose  | Version
   deriving (Show, Eq)
    
 type SrcDir = FilePath
 type DstDir = FilePath
+type SrcPath = FilePath
+type DstPath = FilePath
 
 options :: [OptDescr OptionFlag]
 options = 
@@ -50,15 +55,33 @@ processOpts argv =
 markdownPaths :: FilePath -> IO [FilePath]
 markdownPaths = globDir1 (compile "**/*.md")
 
-
--- | Transform a list of source (markdown) paths to a list of destination (html) paths
-destPaths :: SrcDir -> DstDir -> [FilePath] -> [FilePath]
-destPaths srcDir dstDir srcPaths = fmap src2dst srcPaths
+-- | Return the destination path for a given source path
+dstPath :: SrcDir -> DstDir -> SrcPath -> DstPath
+dstPath srcDir dstDir = unpack . (replace srcText dstText) . pack . tohtml
   where
-    src2dst = unpack . (replace srcText dstText) . pack . tohtml 
     srcText = pack srcDir
     dstText = pack dstDir
     tohtml fp = replaceExtension fp ".html"
+
+-- | Transform a list of source (markdown) paths to a list of dstPath (html) paths
+destPaths :: SrcDir -> DstDir -> [SrcPath] -> [DstPath]
+destPaths srcDir dstDir srcPaths = fmap src2dst srcPaths where
+  src2dst = dstPath srcDir dstDir
+
+-- | Augment a list of source (markdown) paths with dstPath (html) paths
+srcdestPairs :: SrcDir -> DstDir -> [SrcPath] -> [(SrcPath, DstPath)]
+srcdestPairs srcDir dstDir srcPaths = fmap addDestTo srcPaths where
+  src2dst = dstPath srcDir dstDir
+  addDestTo sfp = (sfp, src2dst sfp) 
+
+-- | Use default pandoc read and write options
+rOptions = def
+wOptions = def
+
+-- | Is it possible to stream this ?
+runPandoc :: String -> String
+runPandoc md =
+  writeHtmlString wOptions $ readMarkdown rOptions md
 
 
 -- | Walk a directory, selecting files, and processing
