@@ -16,6 +16,8 @@ Then, clone this repo and use cabal to install it in a sandbox. If prompted for 
 git clone github.com/gmp26/md2html.git
 cd md2html
 cabal sandbox init
+cabal install pandoc
+cabal install Glob
 cabal configure
 cabal install
 ```
