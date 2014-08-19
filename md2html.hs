@@ -63,34 +63,30 @@ dstPath srcDir dstDir = unpack . (replace srcText dstText) . pack . tohtml
     dstText = pack dstDir
     tohtml fp = replaceExtension fp ".html"
 
--- | Transform a list of source (markdown) paths to a list of dstPath (html) paths
---destPaths :: SrcDir -> DstDir -> [SrcPath] -> [DstPath]
---destPaths srcDir dstDir srcPaths = fmap src2dst srcPaths where
---  src2dst = dstPath srcDir dstDir
+-- | adjust default pandoc reader options
+rOptions :: ReaderOptions
+rOptions = def
+  { -- The following option causes pandoc to read smart typography, a nice
+    -- and free bonus.
+    readerSmart = True
+  }
 
--- | Augment a list of source (markdown) paths with dstPath (html) paths
---srcdestPairs :: SrcDir -> DstDir -> [SrcPath] -> [(SrcPath, DstPath)]
---srcdestPairs srcDir dstDir srcPaths = fmap addDestTo srcPaths where
---  src2dst = dstPath srcDir dstDir
---  addDestTo sfp = (sfp, src2dst sfp) 
+-- | adjust default pandoc writer options
+wOptions :: WriterOptions
+wOptions = def
+  {
+    writerHtml5 = True,
+    writerHTMLMathMethod = MathJax "http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+  }
 
 -- | Use default pandoc read and write options
-rOptions = def
-wOptions = def
+--rOptions = def
+--wOptions = def
 
 -- | Run pandoc over a markdown string, making an html string
 runPandoc :: String -> String
 runPandoc md =
   writeHtmlString wOptions $ readMarkdown rOptions md
-
--- | Convert the first in a list of markdown source files to html files
---processOne :: SrcDir -> DstDir -> [SrcPath] -> IO()
---processOne srcDir dstDir [] = return ()
---processOne srcDir dstDir (sfp:sfps) = do
---  input <- readFile sfp
---  let dfp = dstPath srcDir dstDir sfp
---  createDirectoryIfMissing True $ takeDirectory dfp
---  writeFile dfp $ runPandoc input
 
 -- | Convert a list of markdown source files to html files
 processAll :: SrcDir -> DstDir -> [SrcPath] -> IO()
@@ -101,15 +97,6 @@ processAll srcDir dstDir (sfp:sfps) = do
   createDirectoryIfMissing True $ takeDirectory dfp
   writeFile dfp $ runPandoc input
   processAll srcDir dstDir sfps
-
-
--- | Walk a directory, selecting files, and processing
---mapDir :: (FilePath -> IO ()) -> FilePath -> IO ()
---mapDir proc fp = do
---  isFile <- doesFileExist fp -- is a file of fp
---  if isFile then proc fp     -- process the file
---  else getDirectoryContents fp >>=
---       mapM_ (mapDir proc . (fp </>)) . filter (`notElem` [".", ".."])
 
 main :: IO()
 main = do
@@ -129,9 +116,6 @@ main = do
   if Verbose `elem` userOpts
     then mapM_ putStrLn srcFiles
     else return ()
-
-  --let dstFiles = destPaths srcdir dstdir srcFiles
-  --mapM_ putStrLn dstFiles
 
   processAll srcdir dstdir srcFiles
 
